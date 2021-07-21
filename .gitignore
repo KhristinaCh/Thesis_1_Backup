@@ -1,0 +1,6 @@
+venv/
+.idea
+to_upload/
+main.py
+VK_token.txt
+YD_token.txt
