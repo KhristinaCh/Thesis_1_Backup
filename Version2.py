@@ -46,11 +46,24 @@ class VKUser:
         else:
             pprint('Введите корректную опцию')
 
+    # def get_all_photos(self):
+    #     photos_url = self.url + 'photos.getAll'
+    #     params = {
+    #         'user_id': vk_id,
+    #         'count': count,
+    #         'extended': 1,
+    #         'photos': 1,
+    #     }
+    #     res = requests.get(photos_url, params={**self.params, **params})
+    #     return res.json()
+
     def get_all_photos(self):
-        photos_url = self.url + 'photos.getAll'
+        photos_url = self.url + 'photos.get'
         params = {
-            'user_id': vk_id,
+            'owner_id': vk_id,
             'count': count,
+            'album_id': 'profile',
+            'rev': 1,
             'extended': 1,
             'photos': 1,
         }
