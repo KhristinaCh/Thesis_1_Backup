@@ -1,9 +1,9 @@
 from pprint import pprint
-import os
 import requests
 from datetime import datetime
 import time
 from tqdm import tqdm
+import sys
 
 
 with open('VK_token.txt', 'r') as file_object:
@@ -45,17 +45,20 @@ class VKUser:
             return vk_id
         else:
             pprint('Введите корректную опцию')
+            sys.exit()
 
-    # def get_all_photos(self):
-    #     photos_url = self.url + 'photos.getAll'
-    #     params = {
-    #         'user_id': vk_id,
-    #         'count': count,
-    #         'extended': 1,
-    #         'photos': 1,
-    #     }
-    #     res = requests.get(photos_url, params={**self.params, **params})
-    #     return res.json()
+    def check_vk_id(self):
+        search_url = self.url + 'users.get'
+        self.token = vk_token
+        params = {
+            'user_ids': vk_id
+        }
+        res = requests.get(search_url, params={**self.params, **params}).json()['response'][0]['is_closed']
+        if res == False:
+            pass
+        else:
+            pprint('Профиль данного пользователя закрыт')
+            sys.exit()
 
     def get_all_photos(self):
         photos_url = self.url + 'photos.get'
@@ -93,6 +96,24 @@ class YaUploader:
             'Authorization': 'OAuth {}'.format(self.token)
         }
 
+    def check_folder(self):
+        folder_url = 'https://cloud-api.yandex.net/v1/disk/resources'
+        headers = self.get_headers()
+        params = {'path': f'VK_photos_from_{vk_id}_profile'}
+        response = requests.get(folder_url, headers=headers, params=params)
+        print(response.status_code)
+        if response.status_code != 200:
+            self.create_folder()
+
+    def create_folder(self):
+        folder_url = 'https://cloud-api.yandex.net/v1/disk/resources'
+        headers = self.get_headers()
+        params = {'path': f'VK_photos_from_{vk_id}_profile'}
+        response = requests.put(folder_url, headers=headers, params=params)
+        response.raise_for_status()
+        if response.status_code == 201:
+            print("Success")
+
     def get_upload_link(self, disk_file_path):
         upload_url = "https://cloud-api.yandex.net/v1/disk/resources/upload"
         headers = self.get_headers()
@@ -113,12 +134,15 @@ if __name__ == '__main__':
     vk_client = VKUser(vk_token, '5.130')
     url_list = []
     vk_id = vk_client.input_params()
+    vk_client.check_vk_id()
     count = int(input('Введите кол-во фото для загрузки: '))
+
     vk_client.get_photos_list()
     uploader = YaUploader(yd_token)
+    uploader.check_folder()
 
     for photo in tqdm(url_list):
         filename = photo['file_name']
         res = requests.get(photo['url']).content
-        uploader.upload_file_to_disk(f'VK_photos/{filename}.jpg', res)
+        uploader.upload_file_to_disk(f'VK_photos_from_{vk_id}_profile/{filename}.jpg', res)
         time.sleep(0.005)
